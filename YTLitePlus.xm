@@ -17,8 +17,6 @@ NSBundle *YTLitePlusBundle() {
 }
 NSBundle *tweakBundle = YTLitePlusBundle();
 
-static const void *kYTLPConflictAutoAcceptedKey = &kYTLPConflictAutoAcceptedKey;
-
 // Keychain fix
 static NSString *accessGroupID() {
     NSDictionary *query = [NSDictionary dictionaryWithObjectsAndKeys:
@@ -60,25 +58,6 @@ static NSString *accessGroupID() {
 
 // Auto-accept YTLite "Incompatible Tweaks" warning screen.
 // YTLite presents this via HelperVC (riskButtonTapped / exitButtonTapped actions).
-%hook HelperVC
-- (void)viewDidAppear:(BOOL)animated {
-    %orig;
-
-    id alreadyHandled = objc_getAssociatedObject(self, kYTLPConflictAutoAcceptedKey);
-    if ([alreadyHandled boolValue]) {
-        return;
-    }
-    objc_setAssociatedObject(self, kYTLPConflictAutoAcceptedKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-
-    if ([self respondsToSelector:@selector(riskButtonTapped)] &&
-        [self respondsToSelector:@selector(exitButtonTapped)]) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self riskButtonTapped];
-        });
-    }
-}
-%end
-
 // Enable Alternate Icons
 %hook UIApplication
 - (BOOL)supportsAlternateIcons {

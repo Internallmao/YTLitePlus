@@ -128,8 +128,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 
 // HelperVC - @bhackel
 @interface HelperVC : UIViewController
-- (void)riskButtonTapped;
-- (void)exitButtonTapped;
 @end 
 
 // Hide Autoplay Mini Preview - @bhackel

@@ -73,6 +73,10 @@ before-all::
 			$(PRINT_FORMAT_ERROR) "Failed to extract YTLite"; exit 1; \
 		fi; \
 	fi;
+before-all::
+	@if [[ -f $(YTLITE_DYLIB) ]]; then \
+		python3 scripts/patch_ytlite_conflicts.py "$(YTLITE_DYLIB)"; \
+	fi
 else
 before-package::
 	@mkdir -p $(THEOS_STAGING_DIR)/Library/Application\ Support; cp -r lang/YTLitePlus.bundle $(THEOS_STAGING_DIR)/Library/Application\ Support/
