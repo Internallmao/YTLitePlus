@@ -28,7 +28,7 @@ YTLitePlus_INJECT_DYLIBS = Tweaks/YTLite/var/jb/Library/MobileSubstrate/DynamicL
 YTLitePlus_EMBED_LIBRARIES = $(THEOS_OBJ_DIR)/libcolorpicker.dylib
 YTLitePlus_EMBED_FRAMEWORKS = $(_THEOS_LOCAL_DATA_DIR)/$(THEOS_OBJ_DIR_NAME)/install_Alderis.xcarchive/Products/var/jb/Library/Frameworks/Alderis.framework
 YTLitePlus_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-unused-but-set-variable -DTWEAK_VERSION=\"$(PACKAGE_VERSION)\"
-YTLitePlus_EMBED_BUNDLES = $(wildcard Bundles/*.bundle) lang/YTLitePlus.bundle
+YTLitePlus_EMBED_BUNDLES = $(wildcard Bundles/*.bundle) lang/YTLitePlus.bundle $(YTLITE_BUNDLE)
 YTLitePlus_EMBED_EXTENSIONS = $(wildcard Extensions/*.appex)
 YTLitePlus_IPA = ./tmp/Payload/YouTube.app
 YTLitePlus_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-unsupported-availability-guard -Wno-unused-but-set-variable -DTWEAK_VERSION=$(PACKAGE_VERSION) $(EXTRA_CFLAGS)
@@ -52,7 +52,8 @@ $(error Failed to fetch latest YTLite version from GitHub API)
 endif
 YTLITE_DEB = $(YTLITE_PATH)/com.dvntm.ytlite_$(YTLITE_VERSION)_iphoneos-arm64.deb
 YTLITE_DYLIB = $(YTLITE_PATH)/var/jb/Library/MobileSubstrate/DynamicLibraries/YTLite.dylib
-YTLITE_BUNDLE = $(YTLITE_PATH)/var/jb/Library/Application\ Support/YTLite.bundle
+YTLITE_BUNDLE_SRC = $(YTLITE_PATH)/var/jb/Library/Application Support/YTLite.bundle
+YTLITE_BUNDLE = $(YTLITE_PATH)/YTLite.bundle
 
 internal-clean::
 	@rm -rf $(YTLITE_PATH)/*
@@ -67,12 +68,20 @@ before-all::
 	@if [[ ! -f $(YTLITE_DEB) ]]; then \
 		curl -s -L "https://github.com/dayanch96/YTLite/releases/download/v$(YTLITE_VERSION)/com.dvntm.ytlite_$(YTLITE_VERSION)_iphoneos-arm64.deb" -o $(YTLITE_DEB); \
 	fi; \
-	if [[ ! -f $(YTLITE_DYLIB) || ! -d $(YTLITE_BUNDLE) ]]; then \
+	if [[ ! -f "$(YTLITE_DYLIB)" || ! -d "$(YTLITE_BUNDLE_SRC)" ]]; then \
 		tar -xf $(YTLITE_DEB) -C $(YTLITE_PATH); tar -xf $(YTLITE_PATH)/data.tar* -C $(YTLITE_PATH); \
-		if [[ ! -f $(YTLITE_DYLIB) || ! -d $(YTLITE_BUNDLE) ]]; then \
+		if [[ ! -f "$(YTLITE_DYLIB)" || ! -d "$(YTLITE_BUNDLE_SRC)" ]]; then \
 			$(PRINT_FORMAT_ERROR) "Failed to extract YTLite"; exit 1; \
 		fi; \
 	fi;
+before-all::
+	@if [[ -d "$(YTLITE_BUNDLE_SRC)" ]]; then \
+		rm -rf "$(YTLITE_BUNDLE)"; \
+		cp -R "$(YTLITE_BUNDLE_SRC)" "$(YTLITE_BUNDLE)"; \
+	fi; \
+	if [[ ! -d "$(YTLITE_BUNDLE)" ]]; then \
+		$(PRINT_FORMAT_ERROR) "Failed to stage YTLite.bundle"; exit 1; \
+	fi
 before-all::
 	@if [[ -f $(YTLITE_DYLIB) ]]; then \
 		python3 scripts/patch_ytlite_conflicts.py "$(YTLITE_DYLIB)"; \

@@ -56,8 +56,6 @@ static NSString *accessGroupID() {
 }
 %end
 
-// Auto-accept YTLite "Incompatible Tweaks" warning screen.
-// YTLite presents this via HelperVC (riskButtonTapped / exitButtonTapped actions).
 // Enable Alternate Icons
 %hook UIApplication
 - (BOOL)supportsAlternateIcons {
