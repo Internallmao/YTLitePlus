@@ -162,8 +162,16 @@ jobs:
           filepath = 'tmp/Payload/YouTube.app/Info.plist'
           remove_uisupporteddevices(filepath)
           EOF
-          # Manually install the Open in YouTube extension
-          cp -R Extensions/*.appex tmp/Payload/YouTube.app/PlugIns
+          # Install the Open in YouTube extension if available.
+          if [ ! -d Extensions ]; then
+            echo "Extensions directory missing. Cloning OpenYouTubeSafariExtension..."
+            git clone --depth 1 https://github.com/BillyCurtis/OpenYouTubeSafariExtension.git Extensions
+          fi
+          if ls Extensions/*.appex >/dev/null 2>&1; then
+            cp -R Extensions/*.appex tmp/Payload/YouTube.app/PlugIns
+          else
+            echo "::warning::No .appex found in Extensions. Continuing without Open in YouTube extension."
+          fi
         env:
           THEOS: ${{ github.workspace }}/theos
           YOUTUBE_URL: ${{ env.URL_YT }}
