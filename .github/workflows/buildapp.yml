@@ -65,6 +65,47 @@ jobs:
           ref: ${{ github.event.inputs.commit_id || github.ref }}
           submodules: recursive
 
+      - name: Restore Missing Dependencies From .gitmodules
+        run: |
+          if [ ! -f .gitmodules ]; then
+            echo "No .gitmodules found, skipping dependency restore."
+            exit 0
+          fi
+
+          while read -r key path; do
+            name="${key#submodule.}"
+            name="${name%.path}"
+            url=$(git config -f .gitmodules --get "submodule.${name}.url" || true)
+            branch=$(git config -f .gitmodules --get "submodule.${name}.branch" || true)
+
+            if [ -z "$url" ]; then
+              continue
+            fi
+
+            if [ -f "$path/.git" ] || [ -d "$path/.git" ]; then
+              echo "Dependency already present: $path"
+              continue
+            fi
+
+            if [ -d "$path" ] && [ -n "$(ls -A "$path" 2>/dev/null)" ]; then
+              echo "Dependency path is non-empty but not a git checkout, leaving as-is: $path"
+              continue
+            fi
+
+            echo "Cloning missing dependency: $path"
+            rm -rf "$path"
+            mkdir -p "$(dirname "$path")"
+            if [ -n "$branch" ]; then
+              git clone --depth 1 --branch "$branch" "$url" "$path"
+            else
+              git clone --depth 1 "$url" "$path"
+            fi
+
+            if [ -f "$path/.gitmodules" ]; then
+              git -C "$path" submodule update --init --recursive --depth 1 || git -C "$path" submodule update --init --recursive
+            fi
+          done < <(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' || true)
+
       - name: Install Dependencies
         run: brew install ldid dpkg make jq
 
