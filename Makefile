@@ -24,9 +24,9 @@ BUNDLE_ID = com.google.ios.youtube
 
 YTLitePlus_FILES = YTLitePlus.xm $(shell find Source -name '*.xm' -o -name '*.x' -o -name '*.m')
 YTLitePlus_FRAMEWORKS = UIKit Security
-YTLitePlus_INJECT_DYLIBS = Tweaks/YTLite/var/jb/Library/MobileSubstrate/DynamicLibraries/YTLite.dylib .theos/obj/libFLEX.dylib .theos/obj/YTUHD.dylib .theos/obj/YouPiP.dylib .theos/obj/YouTubeDislikesReturn.dylib .theos/obj/YTABConfig.dylib .theos/obj/DontEatMyContent.dylib .theos/obj/YTVideoOverlay.dylib .theos/obj/YouTimeStamp.dylib .theos/obj/YouGroupSettings.dylib
+YTLitePlus_INJECT_DYLIBS = Tweaks/YTLite/var/jb/Library/MobileSubstrate/DynamicLibraries/YTLite.dylib .theos/obj/libFLEX.dylib .theos/obj/YTUHD.dylib .theos/obj/YouPiP.dylib .theos/obj/YouTubeDislikesReturn.dylib .theos/obj/iSponsorBlock.dylib .theos/obj/YTABConfig.dylib .theos/obj/DontEatMyContent.dylib .theos/obj/YTVideoOverlay.dylib .theos/obj/YouTimeStamp.dylib .theos/obj/YouGroupSettings.dylib
 YTLITE_PATH = Tweaks/YTLite
-BUNDLE_REF_FILES = $(wildcard Bundles/*.bundle)
+BUNDLE_REF_FILES = Bundles/YTUHD.bundle Bundles/YouPiP.bundle Bundles/RYD.bundle Bundles/iSponsorBlock.bundle Bundles/YTABC.bundle Bundles/DontEatMyContent.bundle Bundles/YTVideoOverlay.bundle Bundles/YouTimeStamp.bundle
 RESOLVED_BUNDLES_DIR = $(THEOS_PROJECT_DIR)/.bundle_staging
 RESOLVED_BUNDLES = $(patsubst Bundles/%.bundle,$(RESOLVED_BUNDLES_DIR)/%.bundle,$(BUNDLE_REF_FILES))
 YTLitePlus_EMBED_LIBRARIES = $(THEOS_OBJ_DIR)/libcolorpicker.dylib
@@ -40,7 +40,7 @@ YTLitePlus_USE_FISHHOOK = 0
 
 include $(THEOS)/makefiles/common.mk
 ifneq ($(JAILBROKEN),1)
-SUBPROJECTS += Tweaks/Alderis Tweaks/FLEXing/libflex Tweaks/YTUHD Tweaks/YouPiP Tweaks/Return-YouTube-Dislikes Tweaks/YTABConfig Tweaks/DontEatMyContent Tweaks/YTVideoOverlay Tweaks/YouTimeStamp Tweaks/YouGroupSettings
+SUBPROJECTS += Tweaks/Alderis Tweaks/FLEXing/libflex Tweaks/YTUHD Tweaks/YouPiP Tweaks/Return-YouTube-Dislikes Tweaks/iSponsorBlock Tweaks/YTABConfig Tweaks/DontEatMyContent Tweaks/YTVideoOverlay Tweaks/YouTimeStamp Tweaks/YouGroupSettings
 include $(THEOS_MAKE_PATH)/aggregate.mk
 endif
 include $(THEOS_MAKE_PATH)/tweak.mk
@@ -99,7 +99,7 @@ before-all::
 				bundleTarget="$$(cd "$$(dirname "$$bundleRef")" && pwd)/$$bundleTarget"; \
 			fi; \
 			if [[ ! -d "$$bundleTarget" ]]; then \
-				$(PRINT_FORMAT_ERROR) "Failed to resolve bundle reference: $$bundleRef -> $$bundleTarget"; exit 1; \
+				$(PRINT_FORMAT_ERROR) "Missing required bundle reference: $$bundleRef -> $$bundleTarget"; exit 1; \
 			fi; \
 			cp -R "$$bundleTarget" "$$destPath"; \
 		fi; \

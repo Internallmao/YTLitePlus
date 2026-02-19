@@ -171,9 +171,35 @@ jobs:
 
       - name: Prepare YouTube iPA
         run: |
+          set -euo pipefail
+          IPA_URL="$(echo "$YOUTUBE_URL" | xargs)"
+          if [ -z "$IPA_URL" ]; then
+            echo "::error::decrypted_youtube_url is empty."
+            exit 1
+          fi
+
           # Download and unzip iPA
-          wget "$YOUTUBE_URL" --quiet --no-verbose -O YouTube.ipa
+          curl --fail --location --silent --show-error \
+            --retry 4 --retry-delay 3 --retry-all-errors \
+            --connect-timeout 20 --max-time 300 \
+            -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)" \
+            "$IPA_URL" -o YouTube.ipa || {
+              echo "::error::Failed to download YouTube IPA. Check decrypted_youtube_url is a direct, publicly accessible .ipa URL."
+              exit 1
+            }
+
+          # Validate archive before unzipping.
+          if ! unzip -tq YouTube.ipa >/dev/null 2>&1; then
+            echo "::error::Downloaded file is not a valid IPA/ZIP archive."
+            ls -lh YouTube.ipa || true
+            exit 1
+          fi
           unzip -q YouTube.ipa -d tmp
+          if [ ! -f tmp/Payload/YouTube.app/Info.plist ]; then
+            echo "::error::IPA did not contain tmp/Payload/YouTube.app/Info.plist"
+            exit 1
+          fi
+
           # Get the version number of the YouTube app and store it
           echo "YT_VERSION=$(grep -A 1 '<key>CFBundleVersion</key>' tmp/Payload/YouTube.app/Info.plist | grep '<string>' | awk -F'[><]' '{print $3}')" >> $GITHUB_ENV
           # Fetch the latest YTLite version from GitHub API.
