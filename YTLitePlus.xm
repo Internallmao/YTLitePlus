@@ -17,6 +17,14 @@ NSBundle *YTLitePlusBundle() {
 }
 NSBundle *tweakBundle = YTLitePlusBundle();
 
+%hook NSPlaceholderString
+- (instancetype)initWithFormat:(NSString *)format locale:(id)locale arguments:(va_list)argList {
+    if (!format)
+        format = @"";
+    return %orig(format, locale, argList);
+}
+%end
+
 // Keychain fix
 static NSString *accessGroupID() {
     NSDictionary *query = [NSDictionary dictionaryWithObjectsAndKeys:

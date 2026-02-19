@@ -25,10 +25,14 @@ BUNDLE_ID = com.google.ios.youtube
 YTLitePlus_FILES = YTLitePlus.xm $(shell find Source -name '*.xm' -o -name '*.x' -o -name '*.m')
 YTLitePlus_FRAMEWORKS = UIKit Security
 YTLitePlus_INJECT_DYLIBS = Tweaks/YTLite/var/jb/Library/MobileSubstrate/DynamicLibraries/YTLite.dylib .theos/obj/libFLEX.dylib .theos/obj/YTUHD.dylib .theos/obj/YouPiP.dylib .theos/obj/YouTubeDislikesReturn.dylib .theos/obj/YTABConfig.dylib .theos/obj/DontEatMyContent.dylib .theos/obj/YTVideoOverlay.dylib .theos/obj/YouTimeStamp.dylib .theos/obj/YouGroupSettings.dylib
+YTLITE_PATH = Tweaks/YTLite
+BUNDLE_REF_FILES = $(wildcard Bundles/*.bundle)
+RESOLVED_BUNDLES_DIR = $(THEOS_PROJECT_DIR)/.bundle_staging
+RESOLVED_BUNDLES = $(patsubst Bundles/%.bundle,$(RESOLVED_BUNDLES_DIR)/%.bundle,$(BUNDLE_REF_FILES))
 YTLitePlus_EMBED_LIBRARIES = $(THEOS_OBJ_DIR)/libcolorpicker.dylib
 YTLitePlus_EMBED_FRAMEWORKS = $(_THEOS_LOCAL_DATA_DIR)/$(THEOS_OBJ_DIR_NAME)/install_Alderis.xcarchive/Products/var/jb/Library/Frameworks/Alderis.framework
 YTLitePlus_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-unused-but-set-variable -DTWEAK_VERSION=\"$(PACKAGE_VERSION)\"
-YTLitePlus_EMBED_BUNDLES = $(wildcard Bundles/*.bundle) lang/YTLitePlus.bundle $(YTLITE_BUNDLE)
+YTLitePlus_EMBED_BUNDLES = $(RESOLVED_BUNDLES) lang/YTLitePlus.bundle $(YTLITE_BUNDLE)
 YTLitePlus_EMBED_EXTENSIONS = $(wildcard Extensions/*.appex)
 YTLitePlus_IPA = ./tmp/Payload/YouTube.app
 YTLitePlus_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-unsupported-availability-guard -Wno-unused-but-set-variable -DTWEAK_VERSION=$(PACKAGE_VERSION) $(EXTRA_CFLAGS)
@@ -45,7 +49,6 @@ FINALPACKAGE = 1
 REMOVE_EXTENSIONS = 1
 CODESIGN_IPA = 0
 
-YTLITE_PATH = Tweaks/YTLite
 YTLITE_VERSION := $(shell curl -s https://api.github.com/repos/dayanch96/YTLite/releases/latest | grep '"tag_name"' | sed 's/.*"v\(.*\)".*/\1/')
 ifeq ($(YTLITE_VERSION),)
 $(error Failed to fetch latest YTLite version from GitHub API)
@@ -57,6 +60,7 @@ YTLITE_BUNDLE = $(YTLITE_PATH)/YTLite.bundle
 
 internal-clean::
 	@rm -rf $(YTLITE_PATH)/*
+	@rm -rf "$(RESOLVED_BUNDLES_DIR)"
 
 ifneq ($(JAILBROKEN),1)
 before-all::
@@ -82,6 +86,24 @@ before-all::
 	if [[ ! -d "$(YTLITE_BUNDLE)" ]]; then \
 		$(PRINT_FORMAT_ERROR) "Failed to stage YTLite.bundle"; exit 1; \
 	fi
+before-all::
+	@mkdir -p "$(RESOLVED_BUNDLES_DIR)"; \
+	for bundleRef in $(BUNDLE_REF_FILES); do \
+		destPath="$(RESOLVED_BUNDLES_DIR)/$$(basename "$$bundleRef")"; \
+		rm -rf "$$destPath"; \
+		if [[ -d "$$bundleRef" ]]; then \
+			cp -R "$$bundleRef" "$$destPath"; \
+		else \
+			bundleTarget=$$(tr -d '\r' < "$$bundleRef"); \
+			if [[ ! "$$bundleTarget" = /* ]]; then \
+				bundleTarget="$$(cd "$$(dirname "$$bundleRef")" && pwd)/$$bundleTarget"; \
+			fi; \
+			if [[ ! -d "$$bundleTarget" ]]; then \
+				$(PRINT_FORMAT_ERROR) "Failed to resolve bundle reference: $$bundleRef -> $$bundleTarget"; exit 1; \
+			fi; \
+			cp -R "$$bundleTarget" "$$destPath"; \
+		fi; \
+	done
 before-all::
 	@if [[ -f $(YTLITE_DYLIB) ]]; then \
 		python3 scripts/patch_ytlite_conflicts.py "$(YTLITE_DYLIB)"; \
